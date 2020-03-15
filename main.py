@@ -3,7 +3,9 @@
 A simple bot for Telegram conversation that enables to:
     - Say Hi
 """
+
 import random
+import sys
 import time
 import os
 import json
@@ -69,10 +71,12 @@ class BotHandler:
         if len(answer) <= 1:
             answer = ["Yes", "No"]
 
-        params = {"chat_id": chat_id,
-                  "question": question_poll,
-                  "options": json.dumps(answer),
-                  "is_anonymous": False}
+        params = {
+            "chat_id": chat_id,
+            "question": question_poll,
+            "options": json.dumps(answer),
+            "is_anonymous": False,
+        }
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
     def get_answer(self, question):
@@ -85,13 +89,17 @@ class BotHandler:
             return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
 
         if question == "/?":
-            help_menu = "Let me help you:\n"\
-                        "/start\n"\
-                        "/hi\n"\
-                        "/newpoll,<question>,<answer1>,<answers2>,...\n"
+            help_menu = (
+                "Let me help you:\n"
+                "/start\n"
+                "/Hi\n"
+                "/newpoll,<question>,<answer1>,<answers2>,...\n"
+            )
+
             return help_menu
 
         return self.dialogue_manager.generate_answer(question)
+
 
 def is_unicode(text):
     """
@@ -175,15 +183,49 @@ class SimpleDialogueManager:
 
             return "Badger! RTFM"
 
+
         return self.random_behavior(question)
 
+def get_docker_secret(name, default=None, getenv=True, secrets_dir="/var/run/secrets"):
+    """This function fetches a docker secret
+    :param name: the name of the docker secret
+    :param default: the default value if no secret found
+    :param getenv: if environment variable should be fetched as fallback
+    :param secrets_dir: the directory where the secrets are stored
+    :returns: docker secret or environment variable depending on params
+    """
+    name_secret = name.lower()
+    name_env = name.upper()
+
+    # initialize value
+    value = None
+
+    # try to read from secret file
+    try:
+        with open(os.path.join(secrets_dir, name_secret), "r") as secret_file:
+            value = secret_file.read().strip()
+            print(f"{name} have been found in docker secret")
+    except IOError:
+        # try to read from env if enabled
+        if getenv:
+            value = os.environ.get(name_env)
+            print(f"{name} have been found in env")
+
+    # set default value if no value found
+    if value is None:
+        value = default
+        print(f"{name} haven't been found, use default {default}")
+
+    return value
 
 def main():
     """
     Handler
     """
-    # Put your own Telegram Access token here...
-    token = os.environ["TELEGRAM_API_KEY"]
+    if not (token := get_docker_secret("TELEGRAM_API_KEY")):
+        print("No token available, exiting")
+        sys.exit(1)
+
     simple_manager = SimpleDialogueManager()
     bot = BotHandler(token, simple_manager)
 
