@@ -40,10 +40,20 @@ class BotHandler(object):
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
-    def send_poll(self, chat_id, question_poll):
+    def send_poll(self, chat_id, question_poll, answer=[]):
+        """
+        This function allow you to create a poll.
+        You can create your question with different answers.
+        If you do not specify any answers, "Yes" or "Not" will be set
+        by default.
+        """
+
+        if len(answer) <= 1:
+            answer = ["Yes", "No"]
+
         params = {"chat_id": chat_id,
                   "question": question_poll,
-                  "options": json.dumps(['Yes', 'No']),
+                  "options": json.dumps(answer),
                   "is_anonymous": False}
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
@@ -54,7 +64,7 @@ class BotHandler(object):
             help_menu = "Let me help you:\n"\
                         "/start\n"\
                         "/Hi\n"\
-                        "/newpoll,<question>\n"
+                        "/newpoll,<question>,<answer1>,<answers2>,...\n"
             return help_menu
         else:
             return self.dialogue_manager.generate_answer(question)
@@ -75,7 +85,7 @@ class SimpleDialogueManager(object):
             return "Hello, You"
         elif question[:8] == "/newpoll":
             question_poll = question.split(",")
-            if len(question_poll) == 2:
+            if len(question_poll) >= 2:
                 return "send_poll"
             else:
                 return "Badger! RTFM"
@@ -107,7 +117,9 @@ def main():
                         answer = bot.get_answer(update["message"]["text"])
                         if answer == "send_poll":
                             question_poll = text.split(",")
-                            bot.send_poll(chat_id, question_poll[1])
+                            answer_poll = question_poll[2:]
+                            print(answer_poll)
+                            bot.send_poll(chat_id, question_poll[1], answer_poll)
                         else:
                             bot.send_message(chat_id, answer)
 
