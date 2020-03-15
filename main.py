@@ -26,6 +26,7 @@ class BotHandler:
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
         self.dialogue_manager = dialogue_manager
+        self.task_schedule = {"T1-take_break": None}
 
     def get_updates(self, offset=None, timeout=30):
         """
@@ -83,23 +84,29 @@ class BotHandler:
     def schedule_task(self):
         """
         This function triggers tasks scheduled
+        Every task is set manually in self.task_schedule to follow the triggers
         """
-        day_now = time.strftime("%a", time.localtime())
-        hour_now = time.strftime("%H:%M:%S", time.localtime())
+        local_time = time.localtime()
+        day_now = time.strftime("%a", local_time)
+        hour_now = time.strftime("%H:%M", local_time)
+        date_now = time.strftime("%d/%m/%Y", local_time)
 
-        hour_now = time.strptime(hour_now, "%H:%M:%S")
+        hour_now_time = time.strptime(hour_now, "%H:%M")
 
         # Check if not Week end
         if day_now not in ("Sat", "Sun"):
-            # Between 16:00:00 and 16:00:30 because of the sleep and timeout in the main loop
-            if hour_now >= time.strptime("16:00:00", "%H:%M:%S")\
-                    and hour_now <= time.strptime("16:00:30", "%H:%M:%S"):
+
+            # Task trigger between 16:00:00 and 16:00:59
+            task_name = "T1-take_break"
+            if hour_now_time == time.strptime("16:00", "%H:%M")\
+                    and self.task_schedule[task_name] != date_now:
 
                 message = "Take a Break!"
                 # Joke for Friday
                 if day_now == "Fri":
                     message += "... I'm kidding, go home right now its Friday!"
 
+                self.task_schedule[task_name] = date_now
                 return message
 
         return ""
@@ -180,11 +187,14 @@ class SimpleDialogueManager:
             # return an article opinion
             return random.choice(self.party_opinion)
 
-        if "mdr" in question.lower() or 'lol' in question.lower():
+        if "mdr" in question.lower() or 'lol' in question.lower()\
+                or self.emoji[":grinning:"] in question\
+                or self.emoji[":joy:"] in question:
             # return a happy emojy
             return random.choice([self.emoji[":grinning:"],
                                   self.emoji[":joy:"],
                                   self.emoji[":rolling_laughing:"]])
+
         if probability <= 5:
             return random.choice(self.random_proposal)
 
@@ -276,7 +286,6 @@ def main():
                         if answer == "send_poll":
                             question_poll = text.split(",")
                             answer_poll = question_poll[2:]
-                            print(answer_poll)
                             bot.send_poll(chat_id, question_poll[1], answer_poll)
                         else:
                             bot.send_message(chat_id, answer)
