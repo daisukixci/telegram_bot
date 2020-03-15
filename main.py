@@ -3,7 +3,7 @@
 A simple bot for Telegram conversation that enables to:
     - Say Hi
 """
-
+import random
 import time
 import os
 import json
@@ -48,7 +48,7 @@ class BotHandler:
         """
         Send text into chat with chat_id
 
-        :param chat_id : ID of the Telegram chat
+        :param chat_id str: ID of the Telegram chat
         :param text str: Message to send on chan_id
         """
         params = {"chat_id": chat_id, "text": text}
@@ -60,6 +60,10 @@ class BotHandler:
         You can create your question with different answers.
         If you do not specify any answers, "Yes" or "Not" will be set
         by default.
+
+        :param chat_id str: ID of the Telegram chat
+        :param question_poll str: Question for the poll
+        :param answer list: Answers possible for the poll
         """
 
         if len(answer) <= 1:
@@ -74,17 +78,20 @@ class BotHandler:
     def get_answer(self, question):
         """
         Generate the answer according to the question
+
+        :param question str: Command/question in the chat
         """
         if question == "/start":
             return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
-        elif question == "/?":
+
+        if question == "/?":
             help_menu = "Let me help you:\n"\
                         "/start\n"\
-                        "/Hi\n"\
+                        "/hi\n"\
                         "/newpoll,<question>,<answer1>,<answers2>,...\n"
             return help_menu
-        else:
-            return self.dialogue_manager.generate_answer(question)
+
+        return self.dialogue_manager.generate_answer(question)
 
 def is_unicode(text):
     """
@@ -99,6 +106,56 @@ class SimpleDialogueManager:
     The main part of our bot will be written here.
     """
 
+    def __init__(self):
+        # Emoji faces have to be encoded in unicode to be display in Telegram chat
+        self.emoji_dict = {":grinning:": "\U0001F600",
+                           ":joy:": "\U0001F602",
+                           ":rolling_laughing:": "\U0001F923",
+                           ":wink:": "\U0001F609",
+                           ":zany_face:": "\U0001F92A"}
+
+        self.article_opinion = ["So cool!", "Nice!",
+                                "Interesting! keep me in touch if you get more details on it",
+                                "Cool! but I've already read it"]
+
+        self.party_opinion = ["I'm in!", "Party!", "Go! I bring the beers",
+                              "Let's go for a party"]
+
+
+    def random_behavior(self, question):
+        """
+        This function improves the bot conversation in the Telegram chat
+
+        :param question str: Command/question in the chat
+        """
+
+        random_proposal = ["Enjoy your day!",
+                           "Who is ready for a party?",
+                           "/newpoll, Do you like the word 'Badger'?",
+                           "I'm playing CS guys! join me",
+                           "How are you guys?",
+                           "The weather is really bad!"]
+
+        probability = random.randint(1, 100)
+
+        if "http" in question.lower():
+            # return an article opinion
+            return random.choice(self.article_opinion)
+
+        if "party" in question.lower():
+            # return an article opinion
+            return random.choice(self.party_opinion)
+
+        if "mdr" in question.lower() or 'lol' in question.lower():
+            # return a happy emojy
+            return random.choice([self.emoji_dict[":grinning:"],
+                                  self.emoji_dict[":joy:"],
+                                  self.emoji_dict[":rolling_laughing:"]])
+        if probability <= 5:
+            return random.choice(random_proposal)
+
+        return ""
+
     def generate_answer(self, question):
         """
         Generate an answer according to the question
@@ -107,16 +164,16 @@ class SimpleDialogueManager:
         """
         if "hi" in question.lower():
             return "Hello, You"
-        elif question[:8] == "/newpoll":
+
+        if question[:8] == "/newpoll":
+            # Detect the command for a new poll
             question_poll = question.split(",")
             if len(question_poll) >= 2:
                 return "send_poll"
-            else:
-                return "Badger! RTFM"
-        else:
-            return "Don't be rude. Say Hi first."
 
+            return "Badger! RTFM"
 
+        return self.random_behavior(question)
 
 
 def main():
