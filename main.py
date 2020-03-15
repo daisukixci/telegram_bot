@@ -79,6 +79,32 @@ class BotHandler:
         }
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
+
+    def schedule_task(self):
+        """
+        This function triggers tasks scheduled
+        """
+        day_now = time.strftime("%a", time.localtime())
+        hour_now = time.strftime("%H:%M:%S", time.localtime())
+
+        hour_now = time.strptime(hour_now, "%H:%M:%S")
+
+        # Check if not Week end
+        if day_now not in ("Sat", "Sun"):
+            # Between 16:00:00 and 16:00:30 because of the sleep and timeout in the main loop
+            if hour_now >= time.strptime("16:00:00", "%H:%M:%S")\
+                    and hour_now <= time.strptime("16:00:30", "%H:%M:%S"):
+
+                message = "Take a Break!"
+                # Joke for Friday
+                if day_now == "Fri":
+                    message += "... I'm kidding, go home right now its Friday!"
+
+                return message
+
+        return ""
+
+
     def get_answer(self, question):
         """
         Generate the answer according to the question
@@ -229,7 +255,14 @@ def main():
 
     print("Ready to talk!")
     offset = 0
+    chat_id = ""
     while True:
+        # Send a message
+        if chat_id != "":
+            message = bot.schedule_task()
+            bot.send_message(chat_id, message)
+
+        # Wait a message and answer
         updates = bot.get_updates(offset=offset)
         for update in updates:
             print("An update received.")
