@@ -131,12 +131,14 @@ class SimpleDialogueManager:
 
         random_proposal = ["Enjoy your day!",
                            "Who is ready for a party?",
-                           "/newpoll, Do you like the word 'Badger'?",
                            "I'm playing CS guys! join me",
                            "How are you guys?",
                            "The weather is really bad!"]
 
         probability = random.randint(1, 100)
+
+        if "exia" in question.lower():
+            return "Let me help you: use /?"
 
         if "http" in question.lower():
             # return an article opinion
