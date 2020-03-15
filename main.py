@@ -6,6 +6,7 @@ A simple bot for Telegram conversation that enables to:
 
 import time
 import os
+import json
 import requests
 from requests.compat import urljoin
 
@@ -53,14 +54,37 @@ class BotHandler:
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
+    def send_poll(self, chat_id, question_poll, answer=[]):
+        """
+        This function allow you to create a poll.
+        You can create your question with different answers.
+        If you do not specify any answers, "Yes" or "Not" will be set
+        by default.
+        """
+
+        if len(answer) <= 1:
+            answer = ["Yes", "No"]
+
+        params = {"chat_id": chat_id,
+                  "question": question_poll,
+                  "options": json.dumps(answer),
+                  "is_anonymous": False}
+        return requests.post(urljoin(self.api_url, "sendPoll"), params)
+
     def get_answer(self, question):
         """
         Generate the answer according to the question
         """
         if question == "/start":
-            return "Hi, I am your Exia bot. How can I help you today?"
-        return self.dialogue_manager.generate_answer(question)
-
+            return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
+        elif question == "/?":
+            help_menu = "Let me help you:\n"\
+                        "/start\n"\
+                        "/Hi\n"\
+                        "/newpoll,<question>,<answer1>,<answers2>,...\n"
+            return help_menu
+        else:
+            return self.dialogue_manager.generate_answer(question)
 
 def is_unicode(text):
     """
@@ -83,8 +107,16 @@ class SimpleDialogueManager:
         """
         if "hi" in question.lower():
             return "Hello, You"
+        elif question[:8] == "/newpoll":
+            question_poll = question.split(",")
+            if len(question_poll) >= 2:
+                return "send_poll"
+            else:
+                return "Badger! RTFM"
         else:
             return "Don't be rude. Say Hi first."
+
+
 
 
 def main():
@@ -108,9 +140,15 @@ def main():
                     text = update["message"]["text"]
                     if is_unicode(text):
                         print("Update content: {}".format(update))
-                        bot.send_message(
-                            chat_id, bot.get_answer(update["message"]["text"])
-                        )
+                        answer = bot.get_answer(update["message"]["text"])
+                        if answer == "send_poll":
+                            question_poll = text.split(",")
+                            answer_poll = question_poll[2:]
+                            print(answer_poll)
+                            bot.send_poll(chat_id, question_poll[1], answer_poll)
+                        else:
+                            bot.send_message(chat_id, answer)
+
                     else:
                         bot.send_message(
                             chat_id,
