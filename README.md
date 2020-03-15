@@ -8,3 +8,6 @@ A bot to do differents things in a group conversation on Telegram.
   * /hi: the bot will say hi :D
   * /?: Get more information about bot actions
   * /newpoll, question, answer1, answer2,... : Create a poll with your question and the different answers
+
+## Task Scheduler
+  * Every day at 4 PM - Take a break!
