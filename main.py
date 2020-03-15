@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import requests
 import time
 import argparse
 import os
 import json
+import requests
 from requests.compat import urljoin
 
 
@@ -28,8 +28,8 @@ class BotHandler(object):
         raw_resp = requests.get(urljoin(self.api_url, "getUpdates"), params)
         try:
             resp = raw_resp.json()
-        except json.decoder.JSONDecodeError as e:
-            print("Failed to parse response {}: {}.".format(raw_resp.content, e))
+        except json.decoder.JSONDecodeError as error:
+            print("Failed to parse response {}: {}.".format(raw_resp.content, error))
             return []
 
         if "result" not in resp:
@@ -40,10 +40,24 @@ class BotHandler(object):
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
+    def send_poll(self, chat_id, question_poll):
+        params = {"chat_id": chat_id,
+                  "question": question_poll,
+                  "options": json.dumps(['Yes', 'No']),
+                  "is_anonymous": False}
+        return requests.post(urljoin(self.api_url, "sendPoll"), params)
+
     def get_answer(self, question):
         if question == "/start":
-            return "Hi, I am your project bot. How can I help you today?"
-        return self.dialogue_manager.generate_answer(question)
+            return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
+        elif question == "/?":
+            help_menu = "Let me help you:\n"\
+                        "/start\n"\
+                        "/Hi\n"\
+                        "/newpoll,<question>\n"
+            return help_menu
+        else:
+            return self.dialogue_manager.generate_answer(question)
 
 
 def is_unicode(text):
@@ -59,8 +73,16 @@ class SimpleDialogueManager(object):
     def generate_answer(self, question):
         if "Hi" in question:
             return "Hello, You"
+        elif question[:8] == "/newpoll":
+            question_poll = question.split(",")
+            if len(question_poll) == 2:
+                return "send_poll"
+            else:
+                return "Badger! RTFM"
         else:
             return "Don't be rude. Say Hi first."
+
+
 
 
 def main():
@@ -82,9 +104,13 @@ def main():
                     text = update["message"]["text"]
                     if is_unicode(text):
                         print("Update content: {}".format(update))
-                        bot.send_message(
-                            chat_id, bot.get_answer(update["message"]["text"])
-                        )
+                        answer = bot.get_answer(update["message"]["text"])
+                        if answer == "send_poll":
+                            question_poll = text.split(",")
+                            bot.send_poll(chat_id, question_poll[1])
+                        else:
+                            bot.send_message(chat_id, answer)
+
                     else:
                         bot.send_message(
                             chat_id,
