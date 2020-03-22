@@ -1,0 +1,17 @@
+scheduled_tasks:
+    - take_a_break:
+        month: "0-11"
+        day: "0-31"
+        weekday: "0-4"
+        hour: "16"
+        minute: "0"
+        type: message
+        message: "Take a break"
+    - test:
+        month: "*"
+        day: "*"
+        weekday: "*"
+        hour: "*"
+        minute: "*/1"
+        type: message
+        message: "Test"
