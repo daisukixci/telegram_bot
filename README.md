@@ -10,4 +10,18 @@ A bot to do differents things in a group conversation on Telegram.
   * /newpoll, question, answer1, answer2,... : Create a poll with your question and the different answers
 
 ## Task Scheduler
-  * Every day at 4 PM - Take a break!
+You can add scheduled task in config.yaml, it works with the same syntax as crontab. Right now, we support action type:
+  * message: Send a message to a certain time
+Here one example
+```
+# Every day at 10 AM - say hello in the chat
+scheduled_tasks:
+    - say_good_morning:
+        month: "*"
+        day: "*"
+        weekday: "*"
+        hour: "10"
+        minute: "0"
+        type: message
+        message: "Hello everyone! Have a nice day."
+```
