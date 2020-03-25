@@ -30,6 +30,7 @@ class BotHandler:
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
         self.dialogue_manager = dialogue_manager
+        self.scheduled_tasks = {}
 
     def get_updates(self, offset=None, timeout=30):
         """
@@ -92,7 +93,6 @@ class BotHandler:
         now = datetime.datetime.utcnow()
         now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
         # If not scheduled_tasks, don't do anything
-        print(scheduled_tasks)
         for scheduled_task in scheduled_tasks:
             for task, task_conf in scheduled_task.items():
                 print(f"Looking if {task} need to be run")
@@ -102,11 +102,17 @@ class BotHandler:
                 )
                 next_iter.get_next()
                 next_iter.get_prev()
-                if now == datetime.datetime.utcfromtimestamp(next_iter.get_current()):
+                if now == datetime.datetime.utcfromtimestamp(
+                    next_iter.get_current()
+                ) and self.scheduled_tasks.get(task, False):
                     print(f"Scheduled task {task} is triggered")
+                    self.scheduled_tasks[task] = False
                     if task_conf.get("type", "") == "message":
                         print(f"Task {task} type is message")
                         actions.append(task_conf.get("message", ""))
+                elif now != datetime.datetime.utcfromtimestamp(next_iter.get_current()):
+                    print(f"Task {task} activated")
+                    self.scheduled_tasks[task] = True
 
         return actions
 
