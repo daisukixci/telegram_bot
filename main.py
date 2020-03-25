@@ -6,10 +6,14 @@ A simple bot for Telegram conversation that enables to:
 
 import random
 import sys
-import time
+import datetime
 import os
 import json
+import time
+
+import yaml
 import requests
+import croniter
 from requests.compat import urljoin
 
 
@@ -26,6 +30,7 @@ class BotHandler:
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
         self.dialogue_manager = dialogue_manager
+        self.scheduled_tasks = {}
 
     def get_updates(self, offset=None, timeout=30):
         """
@@ -79,6 +84,38 @@ class BotHandler:
         }
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
+    def run_scheduled_tasks(self, scheduled_tasks=[]):
+        """
+        This function triggers scheduled_tasks
+        Every task is set manually in self.task_schedule to follow the triggers
+        """
+        actions = []
+        now = datetime.datetime.utcnow()
+        now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
+        # If not scheduled_tasks, don't do anything
+        for scheduled_task in scheduled_tasks:
+            for task, task_conf in scheduled_task.items():
+                print(f"Looking if {task} need to be run")
+                next_iter = croniter.croniter(
+                    f"{task_conf.get('minute', '*')} {task_conf.get('hour', '*')} {task_conf.get('day', '*')} {task_conf.get('month', '*')} {task_conf.get('weekday', '*')}",
+                    now,
+                )
+                next_iter.get_next()
+                next_iter.get_prev()
+                if now == datetime.datetime.utcfromtimestamp(
+                    next_iter.get_current()
+                ) and self.scheduled_tasks.get(task, False):
+                    print(f"Scheduled task {task} is triggered")
+                    self.scheduled_tasks[task] = False
+                    if task_conf.get("type", "") == "message":
+                        print(f"Task {task} type is message")
+                        actions.append(task_conf.get("message", ""))
+                elif now != datetime.datetime.utcfromtimestamp(next_iter.get_current()):
+                    print(f"Task {task} activated")
+                    self.scheduled_tasks[task] = True
+
+        return actions
+
     def get_answer(self, question):
         """
         Generate the answer according to the question
@@ -116,24 +153,35 @@ class SimpleDialogueManager:
 
     def __init__(self):
         # Emoji faces have to be encoded in unicode to be display in Telegram chat
-        self.emoji = {":grinning:": "\U0001F600",
-                      ":joy:": "\U0001F602",
-                      ":rolling_laughing:": "\U0001F923",
-                      ":wink:": "\U0001F609",
-                      ":zany_face:": "\U0001F92A"}
+        self.emoji = {
+            ":grinning:": "\U0001F600",
+            ":joy:": "\U0001F602",
+            ":rolling_laughing:": "\U0001F923",
+            ":wink:": "\U0001F609",
+            ":zany_face:": "\U0001F92A",
+        }
 
-        self.article_opinion = ["So cool!", "Nice!",
-                                "Interesting! keep me in touch if you get more details on it",
-                                "Cool! but I've already read it"]
+        self.article_opinion = [
+            "So cool!",
+            "Nice!",
+            "Interesting! keep me in touch if you get more details on it",
+            "Cool! but I've already read it",
+        ]
 
-        self.party_opinion = ["I'm in!", "Party!", "Go! I bring the beers",
-                              "Let's go for a party"]
+        self.party_opinion = [
+            "I'm in!",
+            "Party!",
+            "Go! I bring the beers",
+            "Let's go for a party",
+        ]
 
-        self.random_proposal = ["Enjoy your day!",
-                                "Who is ready for a party?",
-                                "I'm playing CS guys! join me",
-                                "How are you guys?",
-                                "The weather is really bad!"]
+        self.random_proposal = [
+            "Enjoy your day!",
+            "Who is ready for a party?",
+            "I'm playing CS guys! join me",
+            "How are you guys?",
+            "The weather is really bad!",
+        ]
 
     def random_behavior(self, question):
         """
@@ -154,11 +202,21 @@ class SimpleDialogueManager:
             # return an article opinion
             return random.choice(self.party_opinion)
 
-        if "mdr" in question.lower() or 'lol' in question.lower():
+        if (
+            "mdr" in question.lower()
+            or "lol" in question.lower()
+            or self.emoji[":grinning:"] in question
+            or self.emoji[":joy:"] in question
+        ):
             # return a happy emojy
-            return random.choice([self.emoji[":grinning:"],
-                                  self.emoji[":joy:"],
-                                  self.emoji[":rolling_laughing:"]])
+            return random.choice(
+                [
+                    self.emoji[":grinning:"],
+                    self.emoji[":joy:"],
+                    self.emoji[":rolling_laughing:"],
+                ]
+            )
+
         if probability <= 5:
             return random.choice(self.random_proposal)
 
@@ -181,8 +239,8 @@ class SimpleDialogueManager:
 
             return "Badger! RTFM"
 
-
         return self.random_behavior(question)
+
 
 def get_docker_secret(name, default=None, getenv=True, secrets_dir="/var/run/secrets"):
     """This function fetches a docker secret
@@ -216,6 +274,24 @@ def get_docker_secret(name, default=None, getenv=True, secrets_dir="/var/run/sec
 
     return value
 
+
+def load_conf(file_path):
+    """
+    Load configuration from filepath designed file
+
+    :param file_path str: Configuration file path
+    """
+    with open(file_path) as stream:
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.YAMLError as error:
+            print("Error loading configuration file %s", error)
+            return {}
+        # TODO: add configuration checks
+
+    return config
+
+
 def main():
     """
     Handler
@@ -226,10 +302,21 @@ def main():
 
     simple_manager = SimpleDialogueManager()
     bot = BotHandler(token, simple_manager)
+    config = load_conf("config.yaml")
 
     print("Ready to talk!")
     offset = 0
+    chat_id = ""
     while True:
+        # Send a message
+        if chat_id != "":
+            print("Looking for scheduled tasks")
+            messages = bot.run_scheduled_tasks(config["scheduled_tasks"])
+            for message in messages:
+                print("Scheduled tasks found, doing them")
+                bot.send_message(chat_id, message)
+
+        # Wait a message and answer
         updates = bot.get_updates(offset=offset)
         for update in updates:
             print("An update received.")
@@ -243,7 +330,6 @@ def main():
                         if answer == "send_poll":
                             question_poll = text.split(",")
                             answer_poll = question_poll[2:]
-                            print(answer_poll)
                             bot.send_poll(chat_id, question_poll[1], answer_poll)
                         else:
                             bot.send_message(chat_id, answer)
