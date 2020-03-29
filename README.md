@@ -5,9 +5,10 @@ A bot to do differents things in a group conversation on Telegram.
 
 ## Interaction possibles
   * /start: Start to interact with the bot
-  * /hi: the bot will say hi :D
-  * /?: Get more information about bot actions
-  * /newpoll, question, answer1, answer2,... : Create a poll with your question and the different answers
+  * /hi: the bot will say hi :D.
+  * /?: Get more information about bot actions.
+  * /poll, question, answer1, answer2,... : Create a poll with your question and the different answers.
+  * /mpoll, question, answer1, answer2,... : Create a poll with your question and the different answers. Multiple answers allowed.
 
 ## Task Scheduler
 You can add scheduled task in config.yaml, it works with the same syntax as crontab. Right now, we support action type:
