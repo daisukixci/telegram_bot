@@ -61,7 +61,7 @@ class BotHandler:
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
-    def send_poll(self, chat_id, question_poll, answer=[]):
+    def send_poll(self, chat_id, question_poll, multiple_choices=False, answer=[]):
         """
         This function allow you to create a poll.
         You can create your question with different answers.
@@ -70,6 +70,7 @@ class BotHandler:
 
         :param chat_id str: ID of the Telegram chat
         :param question_poll str: Question for the poll
+        :param multiple_choices boolean: If true, allow multiple answers
         :param answer list: Answers possible for the poll
         """
 
@@ -81,6 +82,7 @@ class BotHandler:
             "question": question_poll,
             "options": json.dumps(answer),
             "is_anonymous": False,
+            "allows_multiple_answers": multiple_choices,
         }
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
@@ -130,7 +132,8 @@ class BotHandler:
                 "Let me help you:\n"
                 "/start\n"
                 "/Hi\n"
-                "/newpoll,<question>,<answer1>,<answers2>,...\n"
+                "/poll,<question>,<answer1>,<answers2>,...\n"
+                "/mpoll,<question>,<answer1>,<answers2>,...\n"
             )
 
             return help_menu
@@ -231,11 +234,16 @@ class SimpleDialogueManager:
         if "hi" in question.lower():
             return "Hello, You"
 
-        if question[:8] == "/newpoll":
+        if question[:5] == "/poll":
             # Detect the command for a new poll
             question_poll = question.split(",")
             if len(question_poll) >= 2:
                 return "send_poll"
+        elif question[:6] == "/mpoll":
+            # Detect the command for a new poll
+            question_poll = question.split(",")
+            if len(question_poll) >= 2:
+                return "send_mpoll"
 
             return "Badger! RTFM"
 
@@ -331,6 +339,10 @@ def main():
                             question_poll = text.split(",")
                             answer_poll = question_poll[2:]
                             bot.send_poll(chat_id, question_poll[1], answer_poll)
+                        elif answer == "send_mpoll":
+                            question_poll = text.split(",")
+                            answer_poll = question_poll[2:]
+                            bot.send_poll(chat_id, question_poll[1], True, answer_poll)
                         else:
                             bot.send_message(chat_id, answer)
 
