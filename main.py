@@ -61,7 +61,7 @@ class BotHandler:
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
-    def send_poll(self, chat_id, question_poll, multiple_choices=False, answer=[]):
+    def send_poll(self, chat_id, question_poll, answer, multiple_choices=False):
         """
         This function allow you to create a poll.
         You can create your question with different answers.
@@ -86,7 +86,7 @@ class BotHandler:
         }
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
-    def run_scheduled_tasks(self, scheduled_tasks=[]):
+    def run_scheduled_tasks(self, scheduled_tasks):
         """
         This function triggers scheduled_tasks
         Every task is set manually in self.task_schedule to follow the triggers
@@ -95,6 +95,9 @@ class BotHandler:
         now = datetime.datetime.utcnow()
         now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
         # If not scheduled_tasks, don't do anything
+        if not scheduled_tasks:
+            return actions
+
         for scheduled_task in scheduled_tasks:
             for task, task_conf in scheduled_task.items():
                 print(f"Looking if {task} need to be run")
@@ -141,14 +144,7 @@ class BotHandler:
         return self.dialogue_manager.generate_answer(question)
 
 
-def is_unicode(text):
-    """
-    Test if the text is unicode or not by comparing size of encoded and "raw" text
-    """
-    return len(text) == len(text.encode())
-
-
-class SimpleDialogueManager:
+class DialogueManager:
     """
     This is a simple dialogue manager to test the telegram bot.
     The main part of our bot will be written here.
@@ -308,8 +304,8 @@ def main():
         print("No token available, exiting")
         sys.exit(1)
 
-    simple_manager = SimpleDialogueManager()
-    bot = BotHandler(token, simple_manager)
+    dialog_manager = DialogueManager()
+    bot = BotHandler(token, dialog_manager)
     config = load_conf("config.yaml")
 
     print("Ready to talk!")
@@ -332,25 +328,19 @@ def main():
                 chat_id = update["message"]["chat"]["id"]
                 if "text" in update["message"]:
                     text = update["message"]["text"]
-                    if is_unicode(text):
-                        print("Update content: {}".format(update))
-                        answer = bot.get_answer(update["message"]["text"])
-                        if answer == "send_poll":
-                            question_poll = text.split(",")
-                            answer_poll = question_poll[2:]
-                            bot.send_poll(chat_id, question_poll[1], answer_poll)
-                        elif answer == "send_mpoll":
-                            question_poll = text.split(",")
-                            answer_poll = question_poll[2:]
-                            bot.send_poll(chat_id, question_poll[1], True, answer_poll)
-                        else:
-                            bot.send_message(chat_id, answer)
-
+                    print("Update content: {}".format(update))
+                    answer = bot.get_answer(update["message"]["text"])
+                    if answer == "send_poll":
+                        question_poll = text.split(",")
+                        answer_poll = question_poll[2:]
+                        bot.send_poll(chat_id, question_poll[1], answer_poll)
+                    elif answer == "send_mpoll":
+                        question_poll = text.split(",")
+                        answer_poll = question_poll[2:]
+                        bot.send_poll(chat_id, question_poll[1], answer_poll, True)
                     else:
-                        bot.send_message(
-                            chat_id,
-                            "Hmm, you are sending some weird characters to me...",
-                        )
+                        bot.send_message(chat_id, answer)
+
             offset = max(offset, update["update_id"] + 1)
         time.sleep(1)
 
