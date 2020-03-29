@@ -31,7 +31,6 @@ jobs:
       run: |
         pip install black
         black --check *.py
-    - name: Test with pytest
+    - name: Test with unittest
       run: |
-        pip install pytest
-        pytest
+        python test_main.py
