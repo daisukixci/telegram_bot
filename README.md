@@ -26,3 +26,9 @@ scheduled_tasks:
         type: message
         message: "Hello everyone! Have a nice day."
 ```
+
+## Roadmap
+[ ] Organize a party
+[ ] Minigames
+[ ] Reminders
+[ ] Giphy
