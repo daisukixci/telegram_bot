@@ -92,7 +92,7 @@ class BotHandler:
         Every task is set manually in self.task_schedule to follow the triggers
         """
         actions = []
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now()
         now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
         # If not scheduled_tasks, don't do anything
         if not scheduled_tasks:
@@ -107,7 +107,7 @@ class BotHandler:
                 )
                 next_iter.get_next()
                 next_iter.get_prev()
-                if now == datetime.datetime.utcfromtimestamp(
+                if now == datetime.datetime.fromtimestamp(
                     next_iter.get_current()
                 ) and self.scheduled_tasks.get(task, False):
                     print(f"Scheduled task {task} is triggered")
@@ -115,7 +115,7 @@ class BotHandler:
                     if task_conf.get("type", "") == "message":
                         print(f"Task {task} type is message")
                         actions.append(task_conf.get("message", ""))
-                elif now != datetime.datetime.utcfromtimestamp(next_iter.get_current()):
+                elif now != datetime.datetime.fromtimestamp(next_iter.get_current()):
                     print(f"Task {task} activated")
                     self.scheduled_tasks[task] = True
 
