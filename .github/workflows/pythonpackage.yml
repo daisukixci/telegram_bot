@@ -33,4 +33,4 @@ jobs:
         black --check *.py
     - name: Test with unittest
       run: |
-        python test_main.py
+          python -m unittest discover tests

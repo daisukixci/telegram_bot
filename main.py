@@ -61,7 +61,7 @@ class BotHandler:
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
-    def send_poll(self, chat_id, question_poll, answer=[]):
+    def send_poll(self, chat_id, question_poll, answer, multiple_choices=False):
         """
         This function allow you to create a poll.
         You can create your question with different answers.
@@ -70,6 +70,7 @@ class BotHandler:
 
         :param chat_id str: ID of the Telegram chat
         :param question_poll str: Question for the poll
+        :param multiple_choices boolean: If true, allow multiple answers
         :param answer list: Answers possible for the poll
         """
 
@@ -81,18 +82,22 @@ class BotHandler:
             "question": question_poll,
             "options": json.dumps(answer),
             "is_anonymous": False,
+            "allows_multiple_answers": multiple_choices,
         }
         return requests.post(urljoin(self.api_url, "sendPoll"), params)
 
-    def run_scheduled_tasks(self, scheduled_tasks=[]):
+    def run_scheduled_tasks(self, scheduled_tasks):
         """
         This function triggers scheduled_tasks
         Every task is set manually in self.task_schedule to follow the triggers
         """
         actions = []
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now()
         now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
         # If not scheduled_tasks, don't do anything
+        if not scheduled_tasks:
+            return actions
+
         for scheduled_task in scheduled_tasks:
             for task, task_conf in scheduled_task.items():
                 print(f"Looking if {task} need to be run")
@@ -102,7 +107,7 @@ class BotHandler:
                 )
                 next_iter.get_next()
                 next_iter.get_prev()
-                if now == datetime.datetime.utcfromtimestamp(
+                if now == datetime.datetime.fromtimestamp(
                     next_iter.get_current()
                 ) and self.scheduled_tasks.get(task, False):
                     print(f"Scheduled task {task} is triggered")
@@ -110,7 +115,7 @@ class BotHandler:
                     if task_conf.get("type", "") == "message":
                         print(f"Task {task} type is message")
                         actions.append(task_conf.get("message", ""))
-                elif now != datetime.datetime.utcfromtimestamp(next_iter.get_current()):
+                elif now != datetime.datetime.fromtimestamp(next_iter.get_current()):
                     print(f"Task {task} activated")
                     self.scheduled_tasks[task] = True
 
@@ -130,7 +135,8 @@ class BotHandler:
                 "Let me help you:\n"
                 "/start\n"
                 "/Hi\n"
-                "/newpoll,<question>,<answer1>,<answers2>,...\n"
+                "/poll,<question>,<answer1>,<answers2>,...\n"
+                "/mpoll,<question>,<answer1>,<answers2>,...\n"
             )
 
             return help_menu
@@ -138,14 +144,7 @@ class BotHandler:
         return self.dialogue_manager.generate_answer(question)
 
 
-def is_unicode(text):
-    """
-    Test if the text is unicode or not by comparing size of encoded and "raw" text
-    """
-    return len(text) == len(text.encode())
-
-
-class SimpleDialogueManager:
+class DialogueManager:
     """
     This is a simple dialogue manager to test the telegram bot.
     The main part of our bot will be written here.
@@ -231,11 +230,16 @@ class SimpleDialogueManager:
         if "hi" in question.lower():
             return "Hello, You"
 
-        if question[:8] == "/newpoll":
+        if question[:5] == "/poll":
             # Detect the command for a new poll
             question_poll = question.split(",")
             if len(question_poll) >= 2:
                 return "send_poll"
+        elif question[:6] == "/mpoll":
+            # Detect the command for a new poll
+            question_poll = question.split(",")
+            if len(question_poll) >= 2:
+                return "send_mpoll"
 
             return "Badger! RTFM"
 
@@ -300,8 +304,8 @@ def main():
         print("No token available, exiting")
         sys.exit(1)
 
-    simple_manager = SimpleDialogueManager()
-    bot = BotHandler(token, simple_manager)
+    dialog_manager = DialogueManager()
+    bot = BotHandler(token, dialog_manager)
     config = load_conf("config.yaml")
 
     print("Ready to talk!")
@@ -324,21 +328,19 @@ def main():
                 chat_id = update["message"]["chat"]["id"]
                 if "text" in update["message"]:
                     text = update["message"]["text"]
-                    if is_unicode(text):
-                        print("Update content: {}".format(update))
-                        answer = bot.get_answer(update["message"]["text"])
-                        if answer == "send_poll":
-                            question_poll = text.split(",")
-                            answer_poll = question_poll[2:]
-                            bot.send_poll(chat_id, question_poll[1], answer_poll)
-                        else:
-                            bot.send_message(chat_id, answer)
-
+                    print("Update content: {}".format(update))
+                    answer = bot.get_answer(update["message"]["text"])
+                    if answer == "send_poll":
+                        question_poll = text.split(",")
+                        answer_poll = question_poll[2:]
+                        bot.send_poll(chat_id, question_poll[1], answer_poll)
+                    elif answer == "send_mpoll":
+                        question_poll = text.split(",")
+                        answer_poll = question_poll[2:]
+                        bot.send_poll(chat_id, question_poll[1], answer_poll, True)
                     else:
-                        bot.send_message(
-                            chat_id,
-                            "Hmm, you are sending some weird characters to me...",
-                        )
+                        bot.send_message(chat_id, answer)
+
             offset = max(offset, update["update_id"] + 1)
         time.sleep(1)
 
