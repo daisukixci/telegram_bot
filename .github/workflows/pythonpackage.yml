@@ -30,7 +30,7 @@ jobs:
     - name: Lint with black
       run: |
         pip install black
-        find . -name *.py -exec black --check {} \;
+        find . -name '*.py' -exec black --check {} \;
     - name: Test with unittest
       run: |
           python -m unittest discover tests
