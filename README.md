@@ -28,6 +28,8 @@ scheduled_tasks:
 ```
 
 ## Roadmap
+[ ] Search on wiki,google, whatever
+[ ] Display infra status
 [ ] Organize a party
 [ ] Minigames
 [ ] Reminders
