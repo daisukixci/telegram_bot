@@ -14,7 +14,7 @@ A bot to do differents things in a group conversation on Telegram.
 You can add scheduled task in config.yaml, it works with the same syntax as crontab. Right now, we support action type:
   * message: Send a message to a certain time
 Here one example
-```
+```yaml
 # Every day at 10 AM - say hello in the chat
 scheduled_tasks:
     - say_good_morning:
@@ -28,9 +28,9 @@ scheduled_tasks:
 ```
 
 ## Roadmap
-[ ] Search on wiki,google, whatever
-[ ] Display infra status
-[ ] Organize a party
-[ ] Minigames
-[ ] Reminders
-[ ] Giphy
+* [ ] Search on wiki,google, whatever
+* [ ] Display infra status
+* [ ] Organize a party
+* [ ] Minigames
+* [ ] Reminders
+* [ ] Giphy
