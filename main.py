@@ -8,8 +8,7 @@ import sys
 import os
 import time
 import yaml
-from dialogue_manager import DialogueManager
-from bot_handler import BotHandler
+from bot import DialogueManager, BotHandler
 
 
 def get_docker_secret(name, default=None, getenv=True, secrets_dir="/var/run/secrets"):

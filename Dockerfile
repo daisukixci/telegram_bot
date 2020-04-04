@@ -4,7 +4,8 @@ COPY requirements.txt /
 
 RUN pip install -r requirements.txt
 
-COPY app/ /app
+COPY bot/ /bot
+COPY main.py /
 COPY config.yaml /
 
-CMD [ "python", "app/main.py" ]
+CMD [ "python", "main.py" ]

@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import mock_open, patch
 import yaml
 
-from app.main import DialogueManager, get_docker_secret, load_conf
+from bot import DialogueManager
+from main import get_docker_secret, load_conf
 
 
 class TestMain(unittest.TestCase):
