@@ -1,17 +1,1 @@
 scheduled_tasks:
-    - say_good_morning:
-        month: "*"
-        day: "*"
-        weekday: "*"
-        hour: "10"
-        minute: "0"
-        type: message
-        message: "Hello everyone! Have a nice day."
-    - take_a_break:
-        month: "*"
-        day: "*"
-        weekday: "*"
-        hour: "16"
-        minute: "0"
-        type: message
-        message: "Take a break."
