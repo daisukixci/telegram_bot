@@ -7,6 +7,8 @@ import unittest
 from unittest.mock import mock_open, patch
 import yaml
 
+from app.main import DialogueManager, get_docker_secret, load_conf
+
 
 class TestMain(unittest.TestCase):
     """
@@ -17,8 +19,7 @@ class TestMain(unittest.TestCase):
         """
         Test generate answer
         """
-        dialogue_manager_obj = __import__("main").DialogueManager
-        dialogue_manager = dialogue_manager_obj()
+        dialogue_manager = DialogueManager()
         self.assertEqual(
             dialogue_manager.generate_answer("/poll,Test,foo1,foo2"), "send_poll"
         )
@@ -30,7 +31,6 @@ class TestMain(unittest.TestCase):
         """
         Test get docker secret
         """
-        get_docker_secret = __import__("main").get_docker_secret
         os.environ["FOO"] = "FOO"
         self.assertEqual(get_docker_secret("foo"), "FOO")
         self.assertEqual(get_docker_secret("none"), None)
@@ -66,7 +66,6 @@ class TestMain(unittest.TestCase):
                 },
             ]
         }"""
-        load_conf = __import__("main").load_conf
         with patch("builtins.open", mock_open(read_data=mock_config)):
             self.assertEqual(yaml.safe_load(mock_config), load_conf("fake_path"))
 
