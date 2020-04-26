@@ -4,5 +4,4 @@
 
 __version__ = "0.1.0"
 
-from .dialogue_manager import DialogueManager
 from .bot_handler import BotHandler
