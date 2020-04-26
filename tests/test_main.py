@@ -22,8 +22,24 @@ class TestMain(unittest.TestCase):
         """
         mock_token = Mock()
         bot_handler = BotHandler(mock_token)
-        self.assertEqual(bot_handler.get_answer("/poll,Test,foo1,foo2"), "send_poll")
-        self.assertEqual(bot_handler.get_answer("/mpoll,Test,foo1,foo2"), "send_mpoll")
+
+        expected_answer_poll = {
+            "action": "send_poll",
+            "poll": "Test",
+            "args": ["foo1", "foo2"],
+        }
+        expected_answer_mpoll = {
+            "action": "send_mpoll",
+            "poll": "Test",
+            "args": ["foo1", "foo2"],
+        }
+
+        self.assertEqual(
+            bot_handler.get_answer("/poll,Test,foo1,foo2"), expected_answer_poll
+        )
+        self.assertEqual(
+            bot_handler.get_answer("/mpoll,Test,foo1,foo2"), expected_answer_mpoll
+        )
 
     def test_get_docker_secret(self):
         """

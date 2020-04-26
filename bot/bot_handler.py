@@ -139,26 +139,32 @@ class BotHandler:
 
         :param question str: Command/question in the chat
         """
-        question = question.lower()
-        if question == "/start":
-            return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
+        answer = {}
+        if question.lower() == "/start":
+            answer = {
+                "action": "message",
+                "message": "Hi, I am Exia. How can I help you?\nUse /? to get more information",
+            }
 
         if "hi" in question.lower():
-            return "Hello, You"
+            answer = {"action": "message", "message": "Hello, You"}
 
         if question == "/?":
-            return self.help_menu
+            answer = {"action": "message", "message": self.help_menu}
 
-        if question[:5] == "/poll":
-            # Detect the command for a new poll
-            question_poll = question.split(",")
-            if len(question_poll) >= 2:
-                return "send_poll"
+        if question[:5].lower() == "/poll":
+            poll = question.split(",")
+            if len(poll) >= 2:
+                answer = {"action": "send_poll", "poll": poll[1], "args": poll[2:]}
 
-        if question[:6] == "/mpoll":
-            # Detect the command for a new poll
-            question_poll = question.split(",")
-            if len(question_poll) >= 2:
-                return "send_mpoll"
+        if question[:7].lower() == "/search":
+            search = question.split(",")
+            if len(search) >= 2:
+                answer = {"action": "search", "search": search[1:]}
 
-        return "Badger! RTFM"
+        if question[:6].lower() == "/mpoll":
+            poll = question.split(",")
+            if len(poll) >= 2:
+                answer = {"action": "send_mpoll", "poll": poll[1], "args": poll[2:]}
+
+        return answer

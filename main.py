@@ -91,19 +91,19 @@ def main():
             if "message" in update:
                 chat_id = update["message"]["chat"]["id"]
                 if "text" in update["message"]:
-                    text = update["message"]["text"]
                     print("Update content: {}".format(update))
                     answer = bot.get_answer(update["message"]["text"])
-                    if answer == "send_poll":
-                        question_poll = text.split(",")
-                        answer_poll = question_poll[2:]
-                        bot.send_poll(chat_id, question_poll[1], answer_poll)
-                    elif answer == "send_mpoll":
-                        question_poll = text.split(",")
-                        answer_poll = question_poll[2:]
-                        bot.send_poll(chat_id, question_poll[1], answer_poll, True)
+                    if answer.get("action") == "send_poll":
+                        bot.send_poll(chat_id, answer.get("poll"), answer.get("args"))
+                    elif answer.get("action") == "send_mpoll":
+                        bot.send_poll(
+                            chat_id, answer.get("poll"), answer.get("args"), True
+                        )
                     else:
-                        bot.send_message(chat_id, answer)
+                        try:
+                            bot.send_message(chat_id, answer.get("message"))
+                        except KeyError:
+                            print("Message key is missing")
 
             offset = max(offset, update["update_id"] + 1)
         time.sleep(1)
