@@ -8,7 +8,7 @@ import sys
 import os
 import time
 import yaml
-from bot import DialogueManager, BotHandler
+from bot import BotHandler
 
 
 def get_docker_secret(name, default=None, getenv=True, secrets_dir="/var/run/secrets"):
@@ -69,8 +69,7 @@ def main():
         print("No token available, exiting")
         sys.exit(1)
 
-    dialog_manager = DialogueManager()
-    bot = BotHandler(token, dialog_manager)
+    bot = BotHandler(token)
     config = load_conf("config.yaml")
 
     print("Ready to talk!")

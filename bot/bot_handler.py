@@ -24,11 +24,25 @@ class BotHandler:
             'get_answer' — computes the most relevant on a user's question
     """
 
-    def __init__(self, token, dialogue_manager):
+    def __init__(self, token):
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
-        self.dialogue_manager = dialogue_manager
         self.scheduled_tasks = {}
+        self.help_menu = (
+            "Let me help you:\n"
+            "/start\n"
+            "/hi\n"
+            "/poll,<question>,<answer1>,<answers2>,...\n"
+            "/mpoll,<question>,<answer1>,<answers2>,...\n"
+        )
+        # Emoji faces have to be encoded in unicode to be display in Telegram chat
+        self.emoji = {
+            ":grinning:": "\U0001F600",
+            ":joy:": "\U0001F602",
+            ":rolling_laughing:": "\U0001F923",
+            ":wink:": "\U0001F609",
+            ":zany_face:": "\U0001F92A",
+        }
 
     def get_updates(self, offset=None, timeout=30):
         """
@@ -125,18 +139,26 @@ class BotHandler:
 
         :param question str: Command/question in the chat
         """
+        question = question.lower()
         if question == "/start":
             return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
 
+        if "hi" in question.lower():
+            return "Hello, You"
+
         if question == "/?":
-            help_menu = (
-                "Let me help you:\n"
-                "/start\n"
-                "/hi\n"
-                "/poll,<question>,<answer1>,<answers2>,...\n"
-                "/mpoll,<question>,<answer1>,<answers2>,...\n"
-            )
+            return self.help_menu
 
-            return help_menu
+        if question[:5] == "/poll":
+            # Detect the command for a new poll
+            question_poll = question.split(",")
+            if len(question_poll) >= 2:
+                return "send_poll"
 
-        return self.dialogue_manager.generate_answer(question)
+        if question[:6] == "/mpoll":
+            # Detect the command for a new poll
+            question_poll = question.split(",")
+            if len(question_poll) >= 2:
+                return "send_mpoll"
+
+        return "Badger! RTFM"
