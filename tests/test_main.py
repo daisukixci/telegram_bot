@@ -4,10 +4,9 @@ Test for main.py
 """
 import os
 import unittest
-from unittest.mock import mock_open, patch, Mock
+from unittest.mock import mock_open, patch
 import yaml
 
-from bot import BotHandler
 from main import get_docker_secret, load_conf
 
 
@@ -15,15 +14,6 @@ class TestMain(unittest.TestCase):
     """
     Main test class
     """
-
-    def test_generate_answer(self):
-        """
-        Test generate answer
-        """
-        mock_token = Mock()
-        bot_handler = BotHandler(mock_token)
-        self.assertEqual(bot_handler.get_answer("/poll,Test,foo1,foo2"), "send_poll")
-        self.assertEqual(bot_handler.get_answer("/mpoll,Test,foo1,foo2"), "send_mpoll")
 
     def test_get_docker_secret(self):
         """

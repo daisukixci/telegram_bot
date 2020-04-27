@@ -12,6 +12,7 @@ import datetime
 import json
 import requests
 import croniter
+import dokuwiki
 from requests.compat import urljoin
 
 
@@ -24,7 +25,7 @@ class BotHandler:
             'get_answer' — computes the most relevant on a user's question
     """
 
-    def __init__(self, token):
+    def __init__(self, token, dokuwiki_creds=None):
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
         self.scheduled_tasks = {}
@@ -32,9 +33,23 @@ class BotHandler:
             "Let me help you:\n"
             "/start\n"
             "/hi\n"
-            "/poll,<question>,<answer1>,<answers2>,...\n"
             "/mpoll,<question>,<answer1>,<answers2>,...\n"
+            "/poll,<question>,<answer1>,<answers2>,...\n"
+            "/search,<search>"
         )
+
+        if dokuwiki_creds:
+            try:
+                self.dokuwiki_url = dokuwiki_creds.get("url")
+                self.dokuwiki = dokuwiki.DokuWiki(
+                    dokuwiki_creds.get("url"),
+                    dokuwiki_creds.get("user", ""),
+                    dokuwiki_creds.get("password", ""),
+                    cookieAuth=True,
+                )
+            except (dokuwiki.DokuWikiError, Exception) as error:
+                print(f"Unable to connect to Dokuwiki with error {error}")
+
         # Emoji faces have to be encoded in unicode to be display in Telegram chat
         self.emoji = {
             ":grinning:": "\U0001F600",
@@ -133,32 +148,70 @@ class BotHandler:
 
         return actions
 
+    def send_search_result(self, chat_id, search):
+        """
+        Perform a search accross all search engine declared
+        and send the answer to the chat with chat_id
+
+        :param chat_id str: ID of the Telegram chat
+        :param search str: Term to search
+        """
+        if hasattr(self, "dokuwiki"):
+            print(f"Looking for {search} into dokuwiki")
+            urls = []
+            for result in self.dokuwiki.pages.search(search):
+                urls.append(f"{self.dokuwiki_url}?id={result.get('id')}")
+
+            if urls:
+                answer = "\n".join(urls)
+            else:
+                answer = "No results, sorry"
+
+        if "answer" not in locals():
+            answer = "No search engine available"
+
+        print(f"Search result: {answer}")
+        self.send_message(chat_id, "Here the results I found:\n" + answer)
+
     def get_answer(self, question):
         """
         Generate the answer according to the question
 
         :param question str: Command/question in the chat
         """
-        question = question.lower()
-        if question == "/start":
-            return "Hi, I am Exia. How can I help you?\nUse /? to get more information"
+        answer = {}
+        if question.lower() == "/start":
+            answer = {
+                "action": "message",
+                "message": "Hi, I am Exia. How can I help you?\nUse /? to get more information",
+            }
 
         if "hi" in question.lower():
-            return "Hello, You"
+            answer = {"action": "message", "message": "Hello, You"}
 
         if question == "/?":
-            return self.help_menu
+            answer = {"action": "message", "message": self.help_menu}
 
-        if question[:5] == "/poll":
-            # Detect the command for a new poll
-            question_poll = question.split(",")
-            if len(question_poll) >= 2:
-                return "send_poll"
+        if question[:5].lower() == "/poll":
+            poll = question.split(",")
+            if len(poll) >= 2:
+                answer = {"action": "send_poll", "poll": poll[1], "args": poll[2:]}
+            else:
+                answer = {"action": "message", "message": self.help_menu}
 
-        if question[:6] == "/mpoll":
-            # Detect the command for a new poll
-            question_poll = question.split(",")
-            if len(question_poll) >= 2:
-                return "send_mpoll"
+        if question[:7].lower() == "/search":
+            search = question.split(",")
+            print(search)
+            if len(search) >= 2:
+                answer = {"action": "search", "search": " ".join(search[1:])}
+            else:
+                answer = {"action": "message", "message": self.help_menu}
 
-        return "Badger! RTFM"
+        if question[:6].lower() == "/mpoll":
+            poll = question.split(",")
+            if len(poll) >= 2:
+                answer = {"action": "send_mpoll", "poll": poll[1], "args": poll[2:]}
+            else:
+                answer = {"action": "message", "message": self.help_menu}
+
+        return answer
