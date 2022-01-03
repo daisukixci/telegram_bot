@@ -6,7 +6,8 @@ run:
 	python main.py
 
 test:
-	python -m unittest discover -v tests
+	python -m pytest -v tests
+	python -m pytest --cov=. tests
 
 clean:
 ifneq ($(OUTDATED_IMG), 0)
