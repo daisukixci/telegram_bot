@@ -1,4 +1,4 @@
 croniter==0.3.37
-PyYAML==5.4
+PyYAML==5.4.1
 requests==2.23.0
 dokuwiki==1.2.1
