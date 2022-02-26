@@ -4,14 +4,18 @@ A simple bot for Telegram conversation that enables to:
     - Say hi
 """
 
-import sys
 import os
+import sys
 import time
+
 import yaml
+
 from bot import BotHandler
 
 
-def get_docker_secret(name, default=None, getenv=True, secrets_dir="/var/run/secrets"):
+def get_docker_secret(
+    name, default=None, getenv=True, secrets_dir="/var/run/secrets"
+):
     """This function fetches a docker secret
     :param name: the name of the docker secret
     :param default: the default value if no secret found
@@ -100,10 +104,15 @@ def main():
                     print("Update content: {}".format(update))
                     answer = bot.get_answer(update["message"]["text"])
                     if answer.get("action") == "send_poll":
-                        bot.send_poll(chat_id, answer.get("poll"), answer.get("args"))
+                        bot.send_poll(
+                            chat_id, answer.get("poll"), answer.get("args")
+                        )
                     elif answer.get("action") == "send_mpoll":
                         bot.send_poll(
-                            chat_id, answer.get("poll"), answer.get("args"), True
+                            chat_id,
+                            answer.get("poll"),
+                            answer.get("args"),
+                            True,
                         )
                     elif answer.get("action") == "search":
                         bot.send_search_result(chat_id, answer.get("search"))

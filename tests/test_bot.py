@@ -3,6 +3,7 @@ Test for BotHandler
 """
 import unittest
 from unittest.mock import Mock
+
 from bot import BotHandler
 
 
@@ -45,11 +46,14 @@ class TestBotHandler(unittest.TestCase):
         self.assertEqual(bot_handler.get_answer("/hi"), expected_answer_hi)
         self.assertEqual(bot_handler.get_answer("/?"), expected_answer_help)
         self.assertEqual(
-            bot_handler.get_answer("/mpoll,Test,foo1,foo2"), expected_answer_mpoll
+            bot_handler.get_answer("/mpoll,Test,foo1,foo2"),
+            expected_answer_mpoll,
         )
         self.assertEqual(
-            bot_handler.get_answer("/poll,Test,foo1,foo2"), expected_answer_poll
+            bot_handler.get_answer("/poll,Test,foo1,foo2"),
+            expected_answer_poll,
         )
         self.assertEqual(
-            bot_handler.get_answer("/search,search text"), expected_answer_search
+            bot_handler.get_answer("/search,search text"),
+            expected_answer_search,
         )

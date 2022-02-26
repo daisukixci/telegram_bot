@@ -5,6 +5,7 @@ Test for main.py
 import os
 import unittest
 from unittest.mock import mock_open, patch
+
 import yaml
 
 from main import get_docker_secret, load_conf
@@ -22,7 +23,9 @@ class TestMain(unittest.TestCase):
         os.environ["FOO"] = "FOO"
         self.assertEqual(get_docker_secret("foo"), "FOO")
         self.assertEqual(get_docker_secret("none"), None)
-        self.assertEqual(get_docker_secret("none", default="default"), "default")
+        self.assertEqual(
+            get_docker_secret("none", default="default"), "default"
+        )
 
     def test_load_conf(self):
         """
@@ -55,7 +58,9 @@ class TestMain(unittest.TestCase):
             ]
         }"""
         with patch("builtins.open", mock_open(read_data=mock_config)):
-            self.assertEqual(yaml.safe_load(mock_config), load_conf("fake_path"))
+            self.assertEqual(
+                yaml.safe_load(mock_config), load_conf("fake_path")
+            )
 
 
 if __name__ == "__main__":

@@ -10,19 +10,20 @@ Telegram bot that can:
 
 import datetime
 import json
-import requests
+
 import croniter
 import dokuwiki
+import requests
 from requests.compat import urljoin
 
 
 class BotHandler:
     """
-        BotHandler is a class which implements all back-end of the bot.
-        It has three main functions:
-            'get_updates' — checks for new messages
-            'send_message' – posts new message to user
-            'get_answer' — computes the most relevant on a user's question
+    BotHandler is a class which implements all back-end of the bot.
+    It has three main functions:
+        'get_updates' — checks for new messages
+        'send_message' – posts new message to user
+        'get_answer' — computes the most relevant on a user's question
     """
 
     def __init__(self, token, dokuwiki_creds=None):
@@ -88,7 +89,9 @@ class BotHandler:
         params = {"chat_id": chat_id, "text": text}
         return requests.post(urljoin(self.api_url, "sendMessage"), params)
 
-    def send_poll(self, chat_id, question_poll, answer, multiple_choices=False):
+    def send_poll(
+        self, chat_id, question_poll, answer, multiple_choices=False
+    ):
         """
         This function allow you to create a poll.
         You can create your question with different answers.
@@ -120,7 +123,9 @@ class BotHandler:
         """
         actions = []
         now = datetime.datetime.now()
-        now = datetime.datetime(now.year, now.month, now.day, now.hour, now.minute)
+        now = datetime.datetime(
+            now.year, now.month, now.day, now.hour, now.minute
+        )
         # If not scheduled_tasks, don't do anything
         if not scheduled_tasks:
             return actions
@@ -142,7 +147,9 @@ class BotHandler:
                     if task_conf.get("type", "") == "message":
                         print(f"Task {task} type is message")
                         actions.append(task_conf.get("message", ""))
-                elif now != datetime.datetime.fromtimestamp(next_iter.get_current()):
+                elif now != datetime.datetime.fromtimestamp(
+                    next_iter.get_current()
+                ):
                     print(f"Task {task} activated")
                     self.scheduled_tasks[task] = True
 
@@ -195,7 +202,11 @@ class BotHandler:
         if question[:5].lower() == "/poll":
             poll = question.split(",")
             if len(poll) >= 2:
-                answer = {"action": "send_poll", "poll": poll[1], "args": poll[2:]}
+                answer = {
+                    "action": "send_poll",
+                    "poll": poll[1],
+                    "args": poll[2:],
+                }
             else:
                 answer = {"action": "message", "message": self.help_menu}
 
@@ -210,7 +221,11 @@ class BotHandler:
         if question[:6].lower() == "/mpoll":
             poll = question.split(",")
             if len(poll) >= 2:
-                answer = {"action": "send_mpoll", "poll": poll[1], "args": poll[2:]}
+                answer = {
+                    "action": "send_mpoll",
+                    "poll": poll[1],
+                    "args": poll[2:],
+                }
             else:
                 answer = {"action": "message", "message": self.help_menu}
 
