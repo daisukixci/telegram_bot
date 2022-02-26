@@ -29,4 +29,3 @@ You can run the line bellow. Paste the result within a code block.
 ### What did you expect to see?
 
 ### What did you see instead?
-

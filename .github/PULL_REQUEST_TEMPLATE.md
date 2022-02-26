@@ -9,4 +9,3 @@ To submit a PR please make sure to follow the next steps:
 - [ ] Describe your changes with as much detail as you can.
 - [ ] Link any issues this PR is related to.
 - [ ] Remove the text above.
-
