@@ -35,7 +35,10 @@ You also need to provide _DOKUWIKI_USER_ and _DOKUWIKI_PASSWORD_ as environement
 dokuwiki: "https://wiki.tuxtrooper.com"
 ```
 
-## Roadmap
+## Contribute
+## Poetry
+## Tests
+### Roadmap
 * [ ] Search on wiki,google, whatever
   * [x] Dokuwiki
   * [ ] Search engines
