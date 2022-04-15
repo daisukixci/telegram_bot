@@ -66,6 +66,17 @@ def load_conf(file_path):
     return config
 
 
+def scheduled_tasks(chat_id, bot, config):
+    """
+    Run the scheduled tasks
+    """
+    print("Looking for scheduled tasks")
+    messages = bot.run_scheduled_tasks(config["scheduled_tasks"])
+    for message in messages:
+        print("Scheduled tasks found, doing them")
+        bot.send_message(chat_id, message)
+
+
 def main():
     """
     Handler
@@ -88,11 +99,7 @@ def main():
     while True:
         # Send a message
         if chat_id != "":
-            print("Looking for scheduled tasks")
-            messages = bot.run_scheduled_tasks(config["scheduled_tasks"])
-            for message in messages:
-                print("Scheduled tasks found, doing them")
-                bot.send_message(chat_id, message)
+            scheduled_tasks(chat_id, bot, config)
 
         # Wait a message and answer
         updates = bot.get_updates(offset=offset)
